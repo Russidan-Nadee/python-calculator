@@ -1,7 +1,7 @@
 from tkinter import *
 
 m = Tk()
-m.geometry("500x600")  
+m.geometry("500x600")
 m.option_add("font", "consolas 20")
 
 Label_show_cal = StringVar()
