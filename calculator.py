@@ -116,7 +116,7 @@ class AdvancedCalculator:
             ("x²", 4, 1, 1, "function", lambda: self.add_operator("**2")),
             ("x^y", 4, 2, 1, "function", lambda: self.add_operator("**")),
             ("1/x", 4, 3, 1, "function", self.reciprocal),
-            ("π", 4, 4, 1, "function", lambda: self.add_number(str(math.pi))),
+            ("π", 4, 4, 1, "function", lambda: self.add_number("π")),
             
             # Row 5 - Clear and Backspace
             ("C", 5, 0, 1, "clear", self.clear_all),
@@ -232,28 +232,87 @@ class AdvancedCalculator:
         
         return {**base_style, **styles.get(style, styles['number'])}
     
+    def needs_multiplication(self, before_char: str, after_char: str) -> bool:
+        """Check if implicit multiplication is needed between two characters"""
+        # Cases where multiplication is needed:
+        # number + function: 8sin -> 8*sin
+        # ) + number: )7 -> )*7
+        # ) + function: )sin -> )*sin
+        # ) + (: )( -> )*(
+        # number + (: 8( -> 8*(
+        # π + number: π7 -> π*7
+        # π + function: πsin -> π*sin
+        # number + π: 7π -> 7*π
+        
+        before_is_number = before_char.isdigit() or before_char == '.'
+        before_is_closing = before_char == ')'
+        before_is_pi = before_char == 'π'
+        
+        after_is_number = after_char.isdigit() or after_char == '.'
+        after_is_opening = after_char == '('
+        after_is_function = after_char.isalpha()
+        after_is_pi = after_char == 'π'
+        
+        return (
+            (before_is_number and (after_is_function or after_is_opening or after_is_pi)) or
+            (before_is_closing and (after_is_number or after_is_function or after_is_opening)) or
+            (before_is_pi and (after_is_number or after_is_function or after_is_opening)) or
+            (before_is_number and after_is_pi)
+        )
+    
     def add_number(self, number: str):
-        """Add number to expression"""
+        """Add number to expression with implicit multiplication support"""
         if self.current_expression == "0" or self.display_var.get() == "Error":
             self.current_expression = number
         else:
-            self.current_expression += number
+            # Check if implicit multiplication is needed
+            if (self.current_expression and 
+                self.needs_multiplication(self.current_expression[-1], number[0])):
+                self.current_expression += "×" + number  # Display as × but calculate as *
+            else:
+                self.current_expression += number
         self.update_display()
     
     def add_operator(self, operator: str):
         """Add operator to expression"""
-        if self.current_expression and self.current_expression[-1] not in "+-*/()":
+        if operator == "(":
+            # Check if multiplication needed before opening parenthesis
+            if (self.current_expression and 
+                (self.current_expression[-1].isdigit() or 
+                 self.current_expression[-1] in ")π")):
+                self.current_expression += "×" + operator  # Display as × but calculate as *
+            else:
+                self.current_expression += operator
+        elif operator == ")":
             self.current_expression += operator
-        elif operator in "()":
+        elif operator == "*":
+            # Display × instead of *
+            if self.current_expression and self.current_expression[-1] not in "+-×/(**":
+                self.current_expression += "×"
+        elif self.current_expression and self.current_expression[-1] not in "+-×/(**":
             self.current_expression += operator
+        elif operator in "+-×/(**%":
+            if not self.current_expression or self.current_expression[-1] in "+-×/(**":
+                if operator in "+-":  # Allow negative numbers
+                    self.current_expression += operator
+            else:
+                self.current_expression += operator
+        
         self.update_display()
     
     def add_function(self, function: str):
-        """Add mathematical function"""
-        if self.current_expression == "0":
-            self.current_expression = f"{function}("
+        """Add mathematical function with implicit multiplication support"""
+        function_with_paren = f"{function}("
+        
+        # Check if implicit multiplication is needed before function
+        if (self.current_expression and 
+            self.needs_multiplication(self.current_expression[-1], function[0])):
+            self.current_expression += "×" + function_with_paren  # Display as × but calculate as *
+        elif self.current_expression == "0":
+            self.current_expression = function_with_paren
         else:
-            self.current_expression += f"{function}("
+            self.current_expression += function_with_paren
+        
         self.update_display()
     
     def clear_all(self):
@@ -304,19 +363,27 @@ class AdvancedCalculator:
             return
         
         try:
-            # Replace display symbols with actual operators
+            # Replace display symbols with actual operators for calculation
             expression = self.current_expression.replace("×", "*").replace("÷", "/")
             
             # Handle mathematical functions
             result = self.safe_eval(expression)
             
-            # Add to history
-            self.history.append(f"{self.current_expression} = {result}")
+            # Format result to avoid scientific notation for reasonable numbers
+            if abs(result) < 1e-10:
+                result = 0
+            elif abs(result) > 1e10 or (abs(result) < 1e-4 and result != 0):
+                formatted_result = f"{result:.6e}"
+            else:
+                formatted_result = f"{result:.10g}"
+            
+            # Add to history (show display format, not calculation format)
+            self.history.append(f"{self.current_expression} = {formatted_result}")
             if len(self.history) > 5:
                 self.history.pop(0)
             
             # Update display
-            self.current_expression = str(result)
+            self.current_expression = str(formatted_result)
             self.update_display()
             self.update_history()
             
@@ -325,19 +392,30 @@ class AdvancedCalculator:
             self.current_expression = ""
     
     def safe_eval(self, expression: str) -> float:
-        """Safely evaluate mathematical expression"""
-        # Replace mathematical functions
-        expression = expression.replace("sin", "math.sin")
-        expression = expression.replace("cos", "math.cos")
-        expression = expression.replace("tan", "math.tan")
-        expression = expression.replace("log", "math.log10")
-        expression = expression.replace("ln", "math.log")
-        expression = expression.replace("sqrt", "math.sqrt")
+        """Safely evaluate mathematical expression with improved function handling"""
+        
+        # Handle π replacement first
+        expression = expression.replace("π", str(math.pi))
+        
+        # Replace mathematical functions in correct order (longest first to avoid conflicts)
+        replacements = [
+            ("sqrt", "math.sqrt"),
+            ("sin", "math.sin"),
+            ("cos", "math.cos"), 
+            ("tan", "math.tan"),
+            ("log", "math.log10"),
+            ("ln", "math.log")
+        ]
+        
+        for old, new in replacements:
+            expression = expression.replace(old, new)
         
         # Handle angle conversion for trigonometric functions
         if self.angle_mode == "deg":
+            # Convert degrees to radians for trig functions
             expression = re.sub(r'math\.(sin|cos|tan)\((.*?)\)', 
-                              r'math.\1(math.radians(\2))', expression)
+                              lambda m: f'math.{m.group(1)}(math.radians({m.group(2)}))', 
+                              expression)
         
         # Safe evaluation with limited scope
         allowed_names = {
@@ -346,21 +424,29 @@ class AdvancedCalculator:
         }
         
         try:
-            return eval(expression, allowed_names)
-        except:
-            raise ValueError("Invalid expression")
+            result = eval(expression, allowed_names)
+            return float(result)
+        except Exception as e:
+            raise ValueError(f"Invalid expression: {e}")
     
     def update_display(self):
         """Update main display"""
         if self.current_expression:
-            self.display_var.set(self.current_expression)
+            # Limit display length for better UI
+            display_text = self.current_expression
+            if len(display_text) > 25:
+                display_text = "..." + display_text[-22:]
+            self.display_var.set(display_text)
         else:
             self.display_var.set("0")
     
     def update_history(self):
         """Update history display"""
         if self.history:
-            self.history_label.config(text=f"History: {self.history[-1]}")
+            history_text = self.history[-1]
+            if len(history_text) > 60:
+                history_text = history_text[:57] + "..."
+            self.history_label.config(text=f"History: {history_text}")
         else:
             self.history_label.config(text="History: Empty")
     
@@ -412,7 +498,10 @@ class AdvancedCalculator:
         if key.isdigit():
             self.add_number(key)
         elif key in '+-*/()':
-            self.add_operator(key)
+            if key == '*':
+                self.add_operator('*')  # Will be converted to × in add_operator
+            else:
+                self.add_operator(key)
         elif key == '.':
             self.add_number('.')
         elif key == '=' or event.keysym == 'Return':
@@ -423,6 +512,8 @@ class AdvancedCalculator:
             self.clear_all()
         elif event.keysym == 'Escape':
             self.clear_entry()
+        elif key.lower() == 'p':  # π shortcut
+            self.add_number("π")
     
     def run(self):
         """Start the calculator"""
