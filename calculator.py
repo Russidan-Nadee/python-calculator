@@ -9,7 +9,7 @@ import operator
 class AdvancedCalculator:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Advanced Calculator - Claude.AI Style")
+        self.root.title("Advanced Calculator")
         self.root.geometry("500x700")
         self.root.configure(bg='#1e1e1e')
         
