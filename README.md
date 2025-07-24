@@ -42,7 +42,7 @@ A modern calculator application built with Python Tkinter, featuring comprehensi
 ```bash
 # Clone or download the project
 # Navigate to project directory
-cd calculator_intern_test
+cd python-calculator
 
 # Run the application
 py calculator.py          # Windows
