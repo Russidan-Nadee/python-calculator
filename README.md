@@ -1,40 +1,143 @@
-# Smart Calculator Project (Calculator Intern Test)
+# Advanced Calculator
 
-**Project Description:**
-
-This project is part of the evaluation process for an Intern position, aimed at developing a calculator to assess the coding abilities of applicants.
-
-## Technologies Used
-
-- **Python**: The primary programming language used to develop this calculator.
-
-## Project Structure
-```
-calculator_intern_test/
-├── calculator.py    # The main Python code file for the calculator
-└── README.md        # This file (project description and usage instructions)
-```
-## How to Use
-
-1.  **Download the Code:** You can download the `calculator.py` file from this repository.
-2.  **Run the Program:** Open your terminal or command prompt, navigate to the directory where you saved `calculator.py`, and run it using the command:
-    ```
-    python calculator.py
-    ```
-3.  **Usage:** The program will display prompts for you to enter numbers and mathematical operators in sequence.
+A modern calculator application built with Python Tkinter, featuring comprehensive mathematical functions and a sleek dark interface.
 
 ## Features
 
-- Supports addition (`+`)
-- Supports subtraction (`-`)
-- Supports multiplication (`*`)
-- Supports division (`/`)
+### Basic Operations
+- Arithmetic operations: `+`, `-`, `×`, `÷`
+- Exponentiation: `x²`, `x^y`
+- Square root: `√`
+- Reciprocal: `1/x`
+- Percentage: `%`
+- Parentheses support
 
-## Contribution
+### Scientific Functions
+- Trigonometric: `sin`, `cos`, `tan`
+- Logarithmic: `log` (base 10), `ln` (natural)
+- Mathematical constant: `π`
+- Angle modes: Degrees (`DEG`) / Radians (`RAD`)
 
-Feel free to fork this repository and create pull requests if you have any suggestions or want to improve this calculator. Contributions are welcome!
+### Memory Operations
+- `MC` - Memory Clear
+- `MR` - Memory Recall  
+- `M+` - Memory Add
+- `M-` - Memory Subtract
+
+### User Interface
+- Large, clear display (32pt font)
+- Calculation history (last 5 operations)
+- Dark theme with orange accents
+- Responsive button layout
+
+## Requirements
+
+- **Python 3.6+** (tested with 3.13.5)
+- **tkinter** (included with Python)
+- **Windows/macOS/Linux**
+
+## Installation & Usage
+
+### Quick Start
+```bash
+# Clone or download the project
+# Navigate to project directory
+cd python-calculator
+
+# Run the application
+py calculator.py          # Windows
+python3 calculator.py     # macOS/Linux
+```
+
+### Keyboard Shortcuts
+| Key | Action |
+|-----|--------|
+| `0-9` | Numbers |
+| `+` `-` `*` `/` | Operations |
+| `Enter` `=` | Calculate |
+| `Backspace` | Delete |
+| `Delete` `C` | Clear |
+| `Escape` | Clear entry |
+| `P` | Insert π |
+
+## Usage Examples
+
+```
+Basic: 15 + 25 = 40
+Powers: 2^8 = 256
+Trig: sin(30) = 0.5 (in DEG mode)
+Mixed: 2π + sqrt(16) = 10.283
+Complex: (8+5)×sin(45) = 9.192
+```
+
+## Advanced Features
+
+### Implicit Multiplication
+Automatically inserts multiplication operators:
+- `2π` becomes `2 × π`
+- `8sin(30)` becomes `8 × sin(30)`
+- `(2+3)(4+5)` becomes `(2+3) × (4+5)`
+
+### Error Handling
+- Invalid expressions show "Error"
+- Division by zero protection
+- Automatic recovery from errors
+
+### Smart Display
+- Scientific notation for very large/small numbers
+- Rounds near-zero values to zero
+- Truncates long expressions with "..."
+
+## File Structure
+
+```
+calculator.py    # Main application (400+ lines)
+README.md       # Documentation
+```
+
+## Technical Details
+
+### Architecture
+- Single-class design (`AdvancedCalculator`)
+- Event-driven GUI with tkinter
+- Safe expression evaluation
+- Comprehensive error handling
+
+### Color Scheme
+```python
+colors = {
+    'bg': '#1e1e1e',        # Dark background
+    'accent': '#e97b47',    # Orange accent
+    'text': '#ffffff',      # White text
+    'button_bg': '#3d3d3d'  # Button background
+}
+```
+
+## Troubleshooting
+
+**Python not found**
+```bash
+# Check installation
+py --version
+python --version
+python3 --version
+```
+
+**Import errors**
+- tkinter is included with Python
+- On Linux: `sudo apt-get install python3-tk`
+
+**File issues**
+- Ensure filename is `calculator.py` (not `caculator.py`)
+- Check file permissions
+
+## License
+
+Open source project for educational and personal use.
+
+## Developer
+
+**Russidan Nadee**  
 
 ---
-
-**Note:** This is a basic calculator and may have limitations in certain functionalities.
-
+*Version 1.0 • July 2025*
